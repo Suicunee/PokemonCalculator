@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Alamofire
 
 class Pokemon{
     var name: String?
@@ -24,6 +23,8 @@ class Pokemon{
     var pokemonFinalStats = [String: Int]()
     var pokemonAbility = [String]()
     var pokemonPictURL:String?
+    var pokemonSkills = [String: String]()
+    //var pokemonSkills = [(name: String, power: String)]() // skills for pokemon, stored in a dictionary: {skillname:skillpower}
     
     init() {
         

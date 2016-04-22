@@ -176,13 +176,13 @@ class Type {
     }
     
     func calcMultiplier(pokemonType: String) -> Double {
-        if self.isImmuneTo(pokemonType) {
+        if self.isImmuneTo(pokemonType.uppercaseString) {
             return 0.0
         }
-        else if self.isSuperEffectiveAgainst(pokemonType) {
+        else if self.isSuperEffectiveAgainst(pokemonType.uppercaseString) {
             return 2.0
         }
-        else if self.isNotEffectiveAgainst(pokemonType) {
+        else if self.isNotEffectiveAgainst(pokemonType.uppercaseString) {
             return 0.5
         }
         else {
