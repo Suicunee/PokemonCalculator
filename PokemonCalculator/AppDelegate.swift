@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import Foundation
+import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -17,37 +19,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var pokemonSkillPowerDict = [String: Int]()
     var pokemonSkillTypeDict = [String: Type]()
     var pokemonSkillDamageClassDict = [String: String]()
-    let mew = Pokemon(name:"Mew", pokemonID:151)
-    let mewtwo = Pokemon(name: "Mewtwo", pokemonID:150)
-    let baseURL = "http://pokeapi.co/api/v1/pokemon/"
-    let typeBaseURL = "http://pokeapi.co"
+    var itemDict = [String: String]()
+    
 
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
-        for index in 1...9{
-            pokemonArray.append(getPokeData(index))
+        for index in 0...717{
+            pokemonArray.append(getPokemon(index))
+        }
+        for index in 0...620 {
+            let (skillName, skillPower, Type, damageClass) = getPokemonSkillTuple(index)
+            pokemonSkillArray.append(skillName)
+            pokemonSkillPowerDict[skillName] = skillPower
+            pokemonSkillTypeDict[skillName] = Type
+            pokemonSkillDamageClassDict[skillName] = damageClass
+
+        }
+        for index in 0...745 {
+            let (itemName, itemDescription) = getItem(index)
+            itemDict[itemName] = itemDescription
         }
         
-        for index in 0...8 {
-            let pokeArray = Array(pokemonArray[index].pokemonSkills.keys)
-            for skill in pokeArray {
-                pokemonSkillArray.append(skill)
-            }
-        }
-        pokemonSkillArray = Array(Set(pokemonSkillArray))
-        
-        for index in 0...8 {
-            let pokemonSkills = pokemonArray[index].pokemonSkills
-            for key in pokemonSkills.keys {
-                let pokemonSkillURL = pokemonSkills[key]
-                let (skillPower, Type, damageClass) = getPokemonSkillPowerAndType(pokemonSkillURL!)
-                pokemonSkillPowerDict[key] = skillPower
-                pokemonSkillTypeDict[key] = Type
-                pokemonSkillDamageClassDict[key] = damageClass
-                
-            }
-        }
         return true
     }
 
@@ -73,105 +66,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
     
-    func getPokeData(index: Int) -> Pokemon {
-        var pokemon = Pokemon()
-        let url = NSURL(string: baseURL + String(index))
-        let request = NSMutableURLRequest(URL: url!)
-        let session = NSURLSession.sharedSession()
-        // Semaphore
-        let semaphore = dispatch_semaphore_create(0)
-        //dispatch_async(dispatch_get_global_queue(priority, 0)) {
-        let task = session.dataTaskWithRequest(request) { data, response, error in
-            
-            if data == data {
-                
-                do{
-                    //Get json
-                    let json = try NSJSONSerialization.JSONObjectWithData(data!, options:.AllowFragments)
-                    //print(json)
-                    //Get pokemon index
-                    pokemon.pokemonID = index
-                    
-                    //Get pokemon name
-                    if let name = json["name"] as? String{
-                        pokemon.name = name
-                    }
-                    
-                    //Get pokemon types
-                    if let typeArr = json["types"] as? Array<Dictionary<String,AnyObject>>{
-                        
-                        let dict = typeArr[0] as? [String: AnyObject]
-                        let type = dict!["name"] as? String
-                        pokemon.pokemonType1 = Type(str:(type?.uppercaseString)!)
-                        if typeArr.count == 2 {
-                            
-                            let dict2 = typeArr[1] as? [String: AnyObject]
-                            let type2 = dict2!["name"] as? String
-                            pokemon.pokemonType2 = Type(str:(type2?.uppercaseString)!)
-                        }
-                        
-                    }
-                    
-                    if let ability = json["abilities"] as? Array<Dictionary<String,AnyObject>>{
-                        for dict in ability {
-                            if let abilityName = dict["name"] as? String {
-                                pokemon.pokemonAbility.append(abilityName)
-                            }
-                        }
-                    }
-                    
-                    if let moves = json["moves"] as? Array<Dictionary<String,AnyObject>> {
-                        for dict in moves {
-                            let skillname = dict["name"] as? String
-                            let skillURI = dict["resource_uri"] as? String
-                            //pokemon.pokemonSkills.append((name:skillname!,power:skillURI!))
-                            pokemon.pokemonSkills[skillname!] = skillURI
-                        }
-                    }
-                    
-                    //Get pokemon stats
-                    if let speed = json["speed"] as? Int{
-                        pokemon.speed = speed
-                    }
-                    
-                    if let specialAtk = json["sp_atk"] as? Int{
-                        pokemon.specialAttack = specialAtk
-                    }
-                    
-                    if let specialDef = json["sp_def"] as? Int{
-                        pokemon.specialDefense = specialDef
-                    }
-                    
-                    if let hp = json["hp"] as? Int{
-                        pokemon.hp = hp
-                    }
-                    
-                    if let atk = json["attack"] as? Int{
-                        pokemon.attack = atk
-                    }
-                    
-                    if let def = json["defense"] as? Int{
-                        pokemon.defense = def
-                    }
-                    
-                    pokemon.pokemonPictURL = "http://pokeapi.co/media/img/" + String(index) + ".png"
-                    
-                }catch {
-                    print("Error with Json: \(error)")
-                }
-                
-            } else {
-                print(error)
-            }
-            dispatch_semaphore_signal(semaphore)
-        }
-        
-        task.resume()
-        //}
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-        return pokemon
-    }
-    
     /*
      * Parse skill information into skill dicts
      * Skill name is parsed
@@ -180,51 +74,150 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
      * Skill type is parsed
      */
     
-    func getPokemonSkillPowerAndType(skillURL: String) -> (Int, Type, String) {
+    func getPokemon(index: Int) -> Pokemon {
+        var pokemon = Pokemon()
+        if let path = NSBundle.mainBundle().pathForResource("PokemonData/pokemon", ofType: "json") {
+            do {
+                let jsonData = try NSData(contentsOfFile: path, options: NSDataReadingOptions.DataReadingMappedIfSafe)
+                do {
+                    let jsonResult: NSArray = try NSJSONSerialization.JSONObjectWithData(jsonData, options: NSJSONReadingOptions.MutableContainers) as! NSArray
+                    let pokemonDict = jsonResult[index] as! [String : AnyObject]
+                    parsePokemon(pokemonDict, pokemon: pokemon)
+                    pokemon.pokemonPictURL = "http://pokeapi.co/media/img/" + String(index + 1) + ".png"
+                } catch {}
+            } catch {}
+        }
+        return pokemon
+    }
+    
+    /*
+     * Parsing Pokemon stats
+     * HP
+     * Speed
+     * Attack
+     * Defense
+     * Special attack
+     * Special Defense
+     * Speed
+     * Name
+     * Type
+     */
+    func parsePokemon(pokemonDict: [String: AnyObject], pokemon: Pokemon) -> Pokemon {
+        
+        if let speed = pokemonDict["speed"] as? Int{
+            pokemon.speed = speed
+        }
+        if let attack = pokemonDict["attack"] as? Int{
+            pokemon.attack = attack
+        }
+        if let defense = pokemonDict["defense"] as? Int{
+            pokemon.defense = defense
+        }
+        if let hp = pokemonDict["hp"] as? Int{
+            pokemon.hp = hp
+        }
+        if let sp_atk = pokemonDict["sp_atk"] as? Int{
+            pokemon.specialAttack = sp_atk
+        }
+        if let sp_def = pokemonDict["sp_def"] as? Int{
+            pokemon.specialDefense = sp_def
+        }
+        
+        if let name = pokemonDict["name"] as? String{
+            pokemon.name = name
+        }
+        
+        if let typeArr = pokemonDict["types"] as? Array<Dictionary<String,AnyObject>>{
+            
+            let dict = typeArr[0] as? [String: AnyObject]
+            let type = dict!["name"] as? String
+            pokemon.pokemonType1 = Type(str:(type?.uppercaseString)!)
+            if typeArr.count == 2 {
+                let dict2 = typeArr[1] as? [String: AnyObject]
+                let type2 = dict2!["name"] as? String
+                pokemon.pokemonType2 = Type(str:(type2?.uppercaseString)!)
+            }
+        }
+        return pokemon
+    }
+    
+    
+    /*
+     * Parse skill information into skill dicts
+     * Several information in the dictionary:
+     * Skill name (String)
+     * Skill power (int)
+     * Skill damage class (String)
+     * Skill type (String)
+     */
+    func getPokemonSkillTuple(index: Int) -> (String, Int, Type, String) {
+        var skillName = ""
         var skillPower = 0
         var type = Type(str: "")
         var damageClass = ""
-        var urlArray = skillURL.componentsSeparatedByString("/")
-        urlArray[2] = "v2"
-        let newURL = urlArray.joinWithSeparator("/")
-        
-        let url = NSURL(string: typeBaseURL + newURL)
-        let request = NSMutableURLRequest(URL: url!)
-        let session = NSURLSession.sharedSession()
-        let semaphore = dispatch_semaphore_create(0)
-        let task = session.dataTaskWithRequest(request) { data, response, error in
-            
-            if data == data {
-                
-                do{
-                    //Get json
-                    let json = try NSJSONSerialization.JSONObjectWithData(data!, options:.AllowFragments)
-                    //Get pokemon name
-                    if let power = json["power"] as? Int{
+        var dict = [String: AnyObject]()
+        if let path = NSBundle.mainBundle().pathForResource("PokemonData/skill", ofType: "json") {
+            do {
+                let jsonData = try NSData(contentsOfFile: path, options: NSDataReadingOptions.DataReadingMappedIfSafe)
+                do {
+                    let jsonResult: NSArray = try NSJSONSerialization.JSONObjectWithData(jsonData, options: NSJSONReadingOptions.MutableContainers) as! NSArray
+                    
+                    dict = jsonResult[index] as! [String : AnyObject]
+                    skillName = dict["name"] as! String
+                    
+                    if let power = dict["power"] as? Int {
                         skillPower = power
                     }
-                    if let pokeType = json["type"] as? [String: AnyObject] {
-                        let typeName = pokeType["name"] as? String
-                        type.pokemonType = typeName?.uppercaseString
-                    }
-                    if let pokeDamageClass = json["damage_class"] as? [String: AnyObject] {
-                        let myClass = pokeDamageClass["name"] as? String
-                        damageClass = myClass!
-                    }
+                    
+                    let pokeType = dict["type"] as! [String: AnyObject]
+                    let typeName = pokeType["name"] as! String
+                    type.pokemonType = typeName.uppercaseString
+                    
+                    let pokeDamageClass = dict["damage_class"] as! [String: AnyObject]
+                    let myClass = pokeDamageClass["name"] as! String
+                    damageClass = myClass
 
-                }catch {
-                    print("Error with Json: \(error)")
-                }
-                
-            } else {
-                print(error)
-            }
-            dispatch_semaphore_signal(semaphore)
+                } catch {}
+            } catch {}
+        }
+        return (skillName, skillPower, type, damageClass)
+    }
+    
+    
+    /*
+     * Parse item information
+     * name: name of item
+     * itemdescription: the description of item
+     */
+    func getItem(index: Int) -> (String, String) {
+        var itemName = ""
+        var itemDescription = ""
+        var dict = [String: AnyObject]()
+        if let path = NSBundle.mainBundle().pathForResource("PokemonData/item", ofType: "json") {
+            do {
+                let jsonData = try NSData(contentsOfFile: path, options: NSDataReadingOptions.DataReadingMappedIfSafe)
+                do {
+                    let jsonResult: NSArray = try NSJSONSerialization.JSONObjectWithData(jsonData, options: NSJSONReadingOptions.MutableContainers) as! NSArray
+                    
+                    dict = jsonResult[index] as! [String : AnyObject]
+                    itemName = dict["name"] as! String
+                    
+                    if let effectEntries = dict["effect_entries"] as? Array<Dictionary<String,AnyObject>>{
+                        if effectEntries.count >= 1 {
+                            let effect = effectEntries[0] as! [String: AnyObject]
+                            let description = effect["effect"] as! String
+                            itemDescription = NSString(bytes: description, length: description.characters.count, encoding: NSUTF8StringEncoding) as! String
+                        }
+                        else {
+                            itemDescription = "No Description for this Item"
+                        }
+                        
+                    }
+                } catch {}
+            } catch {}
         }
         
-        task.resume()
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-        return (skillPower, type, damageClass)
+        return (itemName, itemDescription)
     }
 
 }

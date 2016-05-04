@@ -34,15 +34,13 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
      */
     var pokemonArray = [Pokemon]()
     var pokemonSkillArray = [String]()
-    
     var pokemonSkillPowerDict = [String: Int]()
     var pokemonSkillTypeDict = [String: Type]()
     var pokemonSkillDamageClassDict = [String: String]()
+    var itemDict = [String: String]()
+    var itemArray = [String]()
     
     var natureArray = ["Adamant", "Bashful", "Bold", "Brave", "Calm", "Careful", "Docile", "Gentle", "Hardy", "Hasty", "Impish", "Jolly", "Lax", "Lonely", "Mild", "Modest", "Naive", "Naughty", "Quiet", "Quirky", "Rash", "Relaxed", "Sassy", "Serious", "Timid"]
-    
-    var itemArray = [String]()
-    var itemDict = [String:Int]()
     
     var textFieldFlag = 1
     
@@ -52,6 +50,7 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
     @IBOutlet weak var pokemonPickerView: UIPickerView!
     @IBOutlet weak var skillPickerView: UIPickerView!
     @IBOutlet weak var naturePickerView: UIPickerView!
+    @IBOutlet weak var itemPickerView: UIPickerView!
     
     
     @IBOutlet weak var pokemon1Item: UITextField!
@@ -118,11 +117,11 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         let appDelegate = UIApplication.sharedApplication().delegate as? AppDelegate
         pokemonArray = appDelegate!.pokemonArray
         pokemonSkillArray = appDelegate!.pokemonSkillArray
-        
         pokemonSkillPowerDict = appDelegate!.pokemonSkillPowerDict
         pokemonSkillTypeDict = appDelegate!.pokemonSkillTypeDict
         pokemonSkillDamageClassDict = appDelegate!.pokemonSkillDamageClassDict
-        
+        itemDict = appDelegate!.itemDict
+        itemArray = Array(itemDict.keys)
         
         /*
          * Initialize these UI where tag is for contrl
@@ -138,6 +137,16 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         naturePickerView.delegate = self
         naturePickerView.dataSource = self
         naturePickerView.hidden = true
+        
+        itemPickerView.delegate = self
+        itemPickerView.dataSource = self
+        itemPickerView.hidden = true
+        
+        pokemon1Item.tag = 111
+        pokemon1Item.delegate = self
+        
+        pokemon2Item.tag = 112
+        pokemon2Item.delegate = self
         
         pokemon1Nature.tag = 91
         pokemon1Nature.delegate = self
@@ -220,11 +229,6 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         pokemon2SPE.text = "0"
         pokemon2SPE.keyboardType = UIKeyboardType.NumberPad
         
-        
-        
-        
-        
-        
         // Do any additional setup after loading the view, typically from a nib.
     }
 
@@ -260,6 +264,9 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         else if pickerView == naturePickerView {
             return natureArray.count
         }
+        else if pickerView == itemPickerView {
+            return itemArray.count
+        }
         return 1
     }
 
@@ -275,6 +282,9 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         }
         else if pickerView == naturePickerView {
             return natureArray[row]
+        }
+        else if pickerView == itemPickerView {
+            return itemArray[row]
         }
         return ""
     }
@@ -339,6 +349,14 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
             updateByNature2()
             naturePickerView.hidden = true
         }
+        if textFieldFlag == 111 {
+            pokemon1Item.text = itemArray[row]
+            itemPickerView.hidden = true
+        }
+        if textFieldFlag == 112 {
+            pokemon2Item.text = itemArray[row]
+            itemPickerView.hidden = true
+        }
         
     }
     
@@ -393,6 +411,14 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         else if textField.tag == 92 {
             naturePickerView.hidden = false
             textFieldFlag = 92
+        }
+        else if textField.tag == 111 {
+            itemPickerView.hidden = false
+            textFieldFlag = 111
+        }
+        else if textField.tag == 112 {
+            itemPickerView.hidden = false
+            textFieldFlag = 112
         }
         else {
             assignTextFieldFlag(textField.tag)
@@ -529,12 +555,30 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         let damage12 = round(calcDamage12() * 100 / HP * 100) / 100
         let damage13 = round(calcDamage13() * 100 / HP * 100) / 100
         let damage14 = round(calcDamage14() * 100 / HP * 100) / 100
-        let string1 = "Skill 1 -> \(damage11*0.85) ~ \(damage11)%\n"
-        let string2 = "Skill 2 -> \(damage12*0.85) ~ \(damage12)%\n"
-        let string3 = "Skill 3 -> \(damage13*0.85) ~ \(damage13)%\n"
-        let string4 = "Skill 4 -> \(damage14*0.85) ~ \(damage14)%\n"
-        let result = "Pokemon1 to Pokemon2: \n" + string1 + string2 + string3 + string4
-        print(result)
+        var skill1 = "Skill 1"
+        var skill2 = "Skill 2"
+        var skill3 = "Skill 3"
+        var skill4 = "Skill 4"
+        if pokemon1Skill1.text != "" {
+            skill1 = pokemon1Skill1.text!
+        }
+        if pokemon1Skill2.text != "" {
+            skill2 = pokemon1Skill2.text!
+        }
+        if pokemon1Skill3.text != "" {
+            skill3 = pokemon1Skill3.text!
+        }
+        if pokemon1Skill4.text != "" {
+            skill4 = pokemon1Skill4.text!
+        }
+        let string1 = skill1 + " -> \(damage11*0.85) ~ \(damage11)%\n"
+        let string2 = skill2 + " -> \(damage12*0.85) ~ \(damage12)%\n"
+        let string3 = skill3 + " -> \(damage13*0.85) ~ \(damage13)%\n"
+        let string4 = skill4 + " -> \(damage14*0.85) ~ \(damage14)%\n"
+        let pokemon2 = pokemonTextField2.text
+        let pokemon1 = pokemonTextField1.text
+        let mystring = pokemon1! + " to " + pokemon2! + " \n"
+        let result = mystring + string1 + string2 + string3 + string4
         return result
     }
     
@@ -547,12 +591,30 @@ class SecondViewController: UIViewController, UIPickerViewDelegate, UIPickerView
         let damage22 = round(calcDamage22() * 100 / HP * 100) / 100
         let damage23 = round(calcDamage23() * 100 / HP * 100) / 100
         let damage24 = round(calcDamage24() * 100 / HP * 100) / 100
-        let string1 = "Skill 1 -> \(damage21*0.85) ~ \(damage21)%\n"
-        let string2 = "Skill 2 -> \(damage22*0.85) ~ \(damage22)%\n"
-        let string3 = "Skill 3 -> \(damage23*0.85) ~ \(damage23)%\n"
-        let string4 = "Skill 4 -> \(damage24*0.85) ~ \(damage24)%\n"
-        let result = "Pokemon2 to Pokemon1: \n" + string1 + string2 + string3 + string4
-        print(result)
+        var skill1 = "Skill 1"
+        var skill2 = "Skill 2"
+        var skill3 = "Skill 3"
+        var skill4 = "Skill 4"
+        if pokemon2Skill1.text != "" {
+            skill1 = pokemon2Skill1.text!
+        }
+        if pokemon2Skill2.text != "" {
+            skill2 = pokemon2Skill2.text!
+        }
+        if pokemon2Skill3.text != "" {
+            skill3 = pokemon2Skill3.text!
+        }
+        if pokemon2Skill4.text != "" {
+            skill4 = pokemon2Skill4.text!
+        }
+        let string1 = skill1 + " -> \(damage21*0.85) ~ \(damage21)%\n"
+        let string2 = skill2 + " -> \(damage22*0.85) ~ \(damage22)%\n"
+        let string3 = skill3 + " -> \(damage23*0.85) ~ \(damage23)%\n"
+        let string4 = skill4 + " -> \(damage24*0.85) ~ \(damage24)%\n"
+        let pokemon2 = pokemonTextField2.text
+        let pokemon1 = pokemonTextField1.text
+        let mystring = pokemon2! + " to " + pokemon1! + " \n"
+        let result = mystring + string1 + string2 + string3 + string4
         return result
     }
     

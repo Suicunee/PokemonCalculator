@@ -21,6 +21,8 @@ class PokemonDetailController: UIViewController {
     var pokemonSpd:String = ""
     var pokemonSpe:String = ""
     
+    var pokemonID:String = ""
+    
     var pokemonImage: UIImage?
 //
     
@@ -37,6 +39,9 @@ class PokemonDetailController: UIViewController {
     @IBOutlet weak var pokeSpd: UILabel!
     @IBOutlet weak var pokeSpe: UILabel!
     
+    @IBOutlet weak var pokeID: UILabel!
+    
+    
     @IBOutlet weak var pokemonImageView: UIImageView!
     
     override func viewDidLoad() {
@@ -44,6 +49,8 @@ class PokemonDetailController: UIViewController {
         Label.text = pokeName
         type1.text = pokeType1
         type2.text = pokeType2
+        
+        pokeID.text = pokemonID
         
         pokeHP.text = pokemonHp
         pokeAtk.text = pokemonAtk

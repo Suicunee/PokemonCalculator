@@ -8,19 +8,43 @@
 
 import UIKit
 import Foundation
+import AVFoundation
 
 class FirstViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
     @IBOutlet weak var myTableView: UITableView!
-    let baseURL = "http://pokeapi.co/api/v1/pokemon/"
     var pokemonArray = [Pokemon]()
-    let mew = Pokemon(name:"Mew", pokemonID:151)
-    let mewtwo = Pokemon(name: "Mewtwo", pokemonID:150)
+    var audioPlayer: AVAudioPlayer!
+    let path = NSBundle.mainBundle().pathForResource("PokemonMusic/battle1", ofType: "mp3")!
 
+    
+    @IBAction func playMusic(sender: AnyObject) {
+        let url = NSURL(fileURLWithPath: path)
+        do {
+            let sound = try AVAudioPlayer(contentsOfURL: url)
+            audioPlayer = sound
+            audioPlayer.numberOfLoops = 3
+            sound.play()
+        } catch {
+            // couldn't load file :(
+        }
+
+    }
+    
+    @IBAction func stopMusic(sender: AnyObject) {
+        audioPlayer.stop()
+        audioPlayer.currentTime = 0
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         let appDelegate = UIApplication.sharedApplication().delegate as? AppDelegate
         pokemonArray = appDelegate!.pokemonArray
+        
+        
+        // Removed deprecated use of AVAudioSessionDelegate protocol
+
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -36,7 +60,12 @@ class FirstViewController: UIViewController, UITableViewDataSource, UITableViewD
             
             pokemonDetail.pokeName = pokemonArray[path!.row].name!
             pokemonDetail.pokeType1 = (pokemonArray[path!.row].pokemonType1?.pokemonType!)!
-            pokemonDetail.pokeType2 = (pokemonArray[path!.row].pokemonType2.pokemonType!)
+            if (pokemonArray[path!.row].pokemonType2.pokemonType!) == "null" {
+                pokemonDetail.pokeType2 = ""
+            }
+            else {
+                pokemonDetail.pokeType2 = (pokemonArray[path!.row].pokemonType2.pokemonType!)
+            }
             pokemonDetail.pokemonHp = String(pokemonArray[path!.row].hp!)
             pokemonDetail.pokemonAtk = String(pokemonArray[path!.row].attack!)
             pokemonDetail.pokemonDef = String(pokemonArray[path!.row].defense!)
@@ -44,9 +73,10 @@ class FirstViewController: UIViewController, UITableViewDataSource, UITableViewD
             pokemonDetail.pokemonSpd = String(pokemonArray[path!.row].specialDefense!)
             pokemonDetail.pokemonSpe = String(pokemonArray[path!.row].speed!)
             
-            let url = NSURL(string: pokemonArray[path!.row].pokemonPictURL!)
-            let data = NSData(contentsOfURL: url!)
-            pokemonDetail.pokemonImage = UIImage(data: data!)
+            pokemonDetail.pokemonID = "#" + getID(path!.row)
+            
+            let url = pokemonArray[path!.row].pokemonPictURL!
+            pokemonDetail.pokemonImage = getImageByURL(url)
             
         }
         
@@ -55,6 +85,9 @@ class FirstViewController: UIViewController, UITableViewDataSource, UITableViewD
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath) as! PokemonTableViewCell
         cell.pokemonName.text = pokemonArray[indexPath.row].name
+        let url = pokemonArray[indexPath.row].pokemonPictURL
+        cell.pokemonImage.image = getImageByURL(url!)
+        cell.pokemonID.text = "#" + getID(indexPath.row)
         return cell
     }
     
@@ -66,7 +99,23 @@ class FirstViewController: UIViewController, UITableViewDataSource, UITableViewD
         //print("selected \(indexPath.row) row")
         
     }
-
+    
+    func getImageByURL(pokemonURL: String) -> UIImage {
+        let url = NSURL(string: pokemonURL)
+        let data = NSData(contentsOfURL: url!)
+        return UIImage(data: data!)!
+    }
+    
+    func getID(id: Int) -> String {
+        var string = String(id + 1)
+        if string.characters.count == 1 {
+            string = "00" + string
+        }
+        else if string.characters.count == 2 {
+            string = "0" + string
+        }
+        return string
+    }
     
 
 }
